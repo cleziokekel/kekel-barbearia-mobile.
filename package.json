@@ -1,0 +1,27 @@
+{
+  "name": "kekel-barbearia-mobile",
+  "version": "1.5.1",
+  "private": true,
+  "description": "Kekel Barbearia Mobile V1.5.1 - pacote corrigido para envio pelo celular e preparação Android",
+  "scripts": {
+    "dev": "npx serve www",
+    "build": "echo Mobile web assets ready for Capacitor",
+    "android:add": "npx cap add android",
+    "android:sync": "npx cap sync android",
+    "android:open": "npx cap open android",
+    "android:run": "npx cap run android",
+    "android:aab": "npx cap build android",
+    "ios": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "latest",
+    "@capacitor/android": "latest",
+    "@capacitor/ios": "latest",
+    "@supabase/supabase-js": "latest",
+    "@capacitor/push-notifications": "latest"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "latest",
+    "serve": "latest"
+  }
+}
