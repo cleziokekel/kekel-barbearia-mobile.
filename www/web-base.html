@@ -1,0 +1,887 @@
+<!-- KEKEL BARBEARIA V3.3.31 - CORRIGIDA 4: Storage "Barbearia - Fotos" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07140b">
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
+<title>Kekel Barbearia — Desde 1994</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+function kekelPreviewBarberPhoto(input){
+  const file=input?.files?.[0];
+  if(!file) return;
+  if(!/^image\/(jpeg|png)$/.test(file.type)){
+    alert('Escolha uma imagem JPG/JPEG ou PNG.');
+    input.value='';
+    return;
+  }
+  if(file.size>5*1024*1024){
+    alert('A foto deve ter no máximo 5 MB.');
+    input.value='';
+    return;
+  }
+  const img=document.querySelector('#barberPhotoPreview');
+  if(img){ img.src=URL.createObjectURL(file); img.style.display='block'; }
+}
+
+
+function kekelPriceNumber(v){
+  let s=String(v??'').trim().replace(/\s/g,'').replace(/R\$/gi,'');
+  if(s.includes(',')) s=s.replace(/\./g,'').replace(',','.');
+  const n=Number(s);
+  return Number.isFinite(n) ? Math.round(n*100)/100 : null;
+}
+
+
+
+
+
+function servicePriceNumber(v){
+  var s=String(v).trim().replace(/\s/g,'').replace(/R\$/g,'');
+  if(s.indexOf(',')>=0){s=s.replace(/\./g,'').replace(',','.');}
+  var n=Number(s);
+  return Number.isFinite(n)?Math.round(n*100)/100:null;
+}
+async function saveServicePriceFixed(id,input){
+  var price=servicePriceNumber(input);
+  if(price===null||price<0){alert('Digite um preço válido.');return false;}
+  if(!window.sb){alert('Banco de dados não conectado.');return false;}
+  var r=await sb.from('services').update({price:price}).eq('id',id).select('id,price').maybeSingle();
+  if(r.error){alert('Erro ao salvar o preço: '+r.error.message);return false;}
+  if(!r.data){alert('O preço não foi alterado. Verifique as permissões da tabela services.');return false;}
+  if(typeof loadServicesAdmin==='function') await loadServicesAdmin();
+  return true;
+}
+async function addServiceFixed(){
+  var name=prompt('Nome do novo serviço:');
+  if(!name||!name.trim())return;
+  var raw=prompt('Preço do serviço (R$):','0,00');
+  if(raw===null)return;
+  var price=servicePriceNumber(raw);
+  if(price===null||price<0){alert('Digite um preço válido.');return;}
+  if(!window.sb){alert('Banco de dados não conectado.');return;}
+  var r=await sb.from('services').insert({name:name.trim(),price:price}).select('*').maybeSingle();
+  if(r.error){alert('Erro ao adicionar serviço: '+r.error.message);return;}
+  if(!r.data){alert('O serviço não foi criado. Verifique as permissões da tabela services.');return;}
+  if(typeof loadServicesAdmin==='function') await loadServicesAdmin();
+}
+
+</script>
+<style>
+:root{--bg:#050805;--panel:#0d1710;--panel2:#111f14;--green:#1fa54b;--gold:#c9a64b;--text:#f4f5f2;--muted:#aeb7ad;--danger:#d94b4b}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#17341d 0,#050805 45%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;min-height:100vh}
+.container{max-width:980px;margin:auto;padding:18px}.brand{text-align:center;padding:12px 0 4px}.brand img{width:115px;height:115px;object-fit:contain;border-radius:50%}.brand h1{font-size:22px;margin:8px 0 0}.brand p{color:var(--gold);margin:3px 0 16px;font-weight:700}
+.card{background:linear-gradient(145deg,rgba(18,35,21,.96),rgba(6,11,7,.96));border:1px solid #24422a;border-radius:18px;padding:18px;margin:12px 0;box-shadow:0 10px 35px rgba(0,0,0,.3)}
+h2,h3{margin-top:0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+label{display:block;font-size:13px;color:var(--muted);margin:9px 0 5px}input,select,button{width:100%;padding:13px;border-radius:11px;border:1px solid #315438;background:#091009;color:var(--text);font-size:15px}
+button{background:var(--green);border:0;font-weight:800;cursor:pointer}button.secondary{background:#1b2a1e}button.danger{background:var(--danger)}
+.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}.small{font-size:12px;color:var(--muted)}.hidden{display:none!important}.pill{display:inline-block;padding:5px 9px;border-radius:99px;background:#19351e;color:#bcebc7;font-size:12px}.notice{padding:12px;border-radius:12px;background:#122717;border:1px solid #2c5d35;color:#d7efdc}.error{background:#321516;border-color:#6b2b2d;color:#ffd7d7}.success{background:#102a18;border-color:#2b7540;color:#d8ffe1}
+.tabs{display:flex;gap:8px;overflow:auto;margin:8px 0}.tabs button{min-width:130px;background:#142217}.tabs button.active{background:var(--green)}
+.item{padding:12px;border:1px solid #29422d;border-radius:13px;margin:8px 0;background:#0b140d}.item strong{display:block}.right{text-align:right}.center{text-align:center}
+#app{padding-bottom:40px}
+.barber-card{padding:12px;border:1px solid #29422d;border-radius:13px;margin:8px 0;background:#0b140d}.barber-card .times{display:grid;grid-template-columns:1fr 1fr;gap:8px}.barber-card input{margin-top:4px}@media(max-width:520px){.barber-card .times{grid-template-columns:1fr}}.logo-placeholder{text-align:center;margin:8px}.logo-placeholder img{max-width:150px;max-height:90px;object-fit:contain}.setup-slogan{text-align:center;margin:18px 8px 12px;font-weight:800;font-size:1.35rem;line-height:1.25;letter-spacing:.3px;color:#f1f1f1}.setup-slogan span{color:#c9a64b}.barber-choice{display:flex;gap:8px;align-items:center;padding:8px}.barber-choice img{width:48px;height:48px;border-radius:50%;object-fit:cover}.danger{background:#7f1d1d;color:white}.row{display:flex;gap:8px;align-items:center} .barber-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.barber-actions{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}.danger{background:#7f1d1d!important;color:#fff!important;border:0!important}"".barber-admin-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.barber-admin-actions button{cursor:pointer}.danger{background:#7f1d1d!important;color:#fff!important;border:0!important}
+.barber-head{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.barber-photo{width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid #315438;margin-right:10px}
+.barber-main{display:flex;align-items:center;gap:10px}
+.barber-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.service-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.preview-photo{width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid #315438}.photo-upload-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.slot-selected{outline:3px solid #c9a64b;outline-offset:2px}.confirming{opacity:.7;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="brand">
+    <img src="logo.png" alt="Kekel Barbearia">
+    <h1>KEKEL BARBEARIA</h1>
+    <p>DESDE 1994</p>
+  </div>
+
+  <section id="setup" class="card">
+      <div class="setup-slogan">AGENDE SEU SERVIÇO<br><span>NO CONFORTO DE SEU LAR</span></div>
+      <p class="small">Agenda online 24h • Desde 1994</p>
+      <div class="grid" style="margin-top:14px">
+        <button id="clientEntry">👤 Sou Cliente</button>
+        <button id="adminEntry" class="secondary">👑 Administrador</button>
+      </div>
+    </section>
+
+  <section id="auth" class="card hidden">
+  <h2 id="authTitle">Acesso</h2>
+  <p id="authHint" class="small"></p>
+  <div id="signupFields" class="hidden">
+    <label>Nome completo</label>
+    <input id="signupName" autocomplete="name" placeholder="Seu nome">
+    <label>WhatsApp</label>
+    <input id="signupPhone" autocomplete="tel" placeholder="(xx) xxxxx-xxxx">
+  </div>
+  <label>E-mail</label>
+  <input id="email" type="email" autocomplete="email" placeholder="seu@email.com">
+  <label>Senha</label>
+  <input id="password" type="password" autocomplete="current-password" placeholder="Sua senha">
+  <div class="grid" style="margin-top:10px">
+    <button id="loginBtn">Entrar</button>
+    <button id="signupBtn" class="secondary">Criar conta</button>
+  </div>
+  <button id="forgotBtn" class="secondary" style="margin-top:10px">Esqueci minha senha</button>
+  <button id="backHome" class="secondary" style="margin-top:10px">Voltar</button>
+  <div id="authMsg" class="small" style="margin-top:10px"></div>
+</section>
+
+  <section id="recovery" class="card hidden">
+    <h2>🔐 Criar nova senha</h2>
+    <p class="small">O link de recuperação foi reconhecido. Crie uma nova senha para sua conta.</p>
+    <label>Nova senha</label>
+    <input id="newPassword" type="password" autocomplete="new-password" placeholder="Pelo menos 6 caracteres">
+    <label>Confirmar nova senha</label>
+    <input id="newPassword2" type="password" autocomplete="new-password" placeholder="Digite novamente">
+    <button id="saveNewPassword" style="margin-top:10px">Salvar nova senha</button>
+    <div id="recoveryMsg" class="small" style="margin-top:10px"></div>
+  </section>
+
+  <section id="app" class="hidden">
+    <div class="card">
+      <div class="row"><div><strong id="welcome"></strong><div id="roleBadge" class="small"></div></div><button id="logoutBtn" class="secondary" style="max-width:140px">Sair</button></div>
+    </div>
+
+    <div id="clientArea" class="hidden">
+      <div class="tabs">
+        <button class="active" data-tab="book">📅 Agendar</button>
+        <button data-tab="mine">📋 Meus horários</button>
+        <button data-tab="plan">💳 Plano</button>
+        <button data-tab="loyalty">⭐ Fidelidade</button>
+      </div>
+
+      <div id="tab-book" class="card tabpane">
+        <h2>Agenda online 24h</h2>
+        <div class="grid">
+          <div><label>Serviço</label><select id="service"></select></div>
+          <div><label>Barbeiro</label><select id="barber"></select><div id="barberPreview"></div></div>
+          <div><label>Data</label><input id="date" type="date"></div>
+        </div>
+        <div id="slots" style="margin-top:12px"></div><div id="bookingConfirm" class="card hidden" style="margin-top:12px"><div id="bookingSelection" class="small"></div><button id="confirmBooking" type="button" style="margin-top:10px">✅ Confirmar agendamento</button></div>
+      </div>
+
+      <div id="tab-mine" class="card tabpane hidden"><h2>Meus agendamentos</h2><div id="myBookings"></div></div>
+      <div id="tab-plan" class="card tabpane hidden">
+        <h2 id="planTitle">Plano Kekel</h2>
+        <p>Para clientes do plano: cortes quantas vezes quiser durante o mês, conforme os horários disponíveis.</p>
+        <div id="membershipBox"></div>
+      </div>
+      <div id="tab-loyalty" class="card tabpane hidden">
+        <h2>Cartão fidelidade</h2><p>A cada corte registrado, 1 marca. No 10º corte, o corte é grátis.</p>
+        <div id="loyaltyBox"></div>
+      </div>
+    </div>
+
+    <div id="adminArea" class="hidden">
+      <div class="tabs">
+        <button class="active" data-atab="agenda">📅 Agenda</button>
+        <button data-atab="barbers">💈 Barbeiros</button>
+        <button data-atab="clients">👥 Clientes</button>
+        <button data-atab="services">💈 Serviços</button>
+        <button data-atab="settings">⚙️ Horários</button>
+      </div>
+      <div id="atab-agenda" class="card atabpane">
+        <h2>Agenda da barbearia</h2>
+        <label>Dia</label><input id="adminDate" type="date"><div id="adminBookings" style="margin-top:12px"></div>
+      </div>
+      <div id="atab-barbers" class="card atabpane hidden"><h2>Barbeiros</h2><p class="small">Kekel começa com 40 min para corte. Os demais começam com 30 min. Tudo pode ser alterado no painel.</p><div id="barberList"></div><h3>Novo barbeiro</h3><label>Nome</label><input id="newBarberName" placeholder="Nome do barbeiro">
+<label>Foto do barbeiro</label><input id="newBarberPhoto" type="file" accept="image/jpeg,image/png">
+<img id="barberPhotoPreview" class="preview-photo" style="display:none;margin-top:8px" alt="Prévia da foto">
+<button id="uploadNewBarberPhoto" type="button" class="secondary" style="margin-top:8px" disabled>📤 Enviar foto</button>
+<div id="newBarberPhotoMsg" class="small" style="margin-top:6px"></div>
+<button id="addBarber" style="margin-top:10px">Adicionar barbeiro</button></div>
+      <div id="atab-clients" class="card atabpane hidden"><h2>Clientes</h2><div id="clients"></div></div>
+      <div id="atab-services" class="card atabpane hidden">
+        <h2>Serviços</h2><div id="serviceList"></div>
+        <h3 style="margin-top:18px">Novo serviço</h3>
+        <label>Nome</label><input id="newServiceName">
+        <div class="row"><div><label>Duração (min)</label><input id="newServiceDuration" type="number" value="30"></div><div><label>Preço</label><input id="newServicePrice" type="number" step="0.01" value="35"></div></div>
+        <button id="addService" style="margin-top:10px">Adicionar serviço</button>
+      </div>
+      <div id="atab-settings" class="card atabpane">
+        <h2>Horário da barbearia</h2>
+        <div class="row"><div><label>Abertura</label><input id="openTime" type="time" value="08:00"></div><div><label>Fechamento</label><input id="closeTime" type="time" value="19:00"></div></div>
+        <button id="saveSettings" style="margin-top:10px">Salvar horários</button><div class="card" style="margin-top:16px;background:#09130b">
+<h3>💳 Planos mensais</h3>
+<p class="small">Cadastre até 3 planos. Os valores ficam salvos no Supabase e aparecem em qualquer dispositivo.</p>
+<div id="planAdminList"></div>
+<div class="row" style="margin-top:10px"><input id="newPlanName" placeholder="Nome do plano"><input id="newPlanPrice" type="number" min="0" step="0.01" placeholder="Valor (R$)"></div>
+<button id="addPlan" style="margin-top:10px">Adicionar plano</button>
+<div id="planAdminMsg" class="small" style="margin-top:8px"></div>
+</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://yslvcbbycenuskpzoqfm.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_TTjF_H48TB_I41kWX9BQ7Q_gMcJkzqD';
+let sb=null, currentUser=null, profile=null, services=[], settings={opening_time:'08:00',closing_time:'19:00'};
+const $=id=>document.getElementById(id);
+const fmtDate=d=>new Date(d).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});
+const money=v=>Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+function msg(el,text,type=''){el.innerHTML='<div class="notice '+type+'">'+text+'</div>'}
+
+async function connect(){
+  if(!SUPABASE_KEY){
+    $('setup').classList.remove('hidden');
+    $('auth').classList.add('hidden');
+    return;
+  }
+  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  $('setup').classList.remove('hidden');
+  $('auth').classList.add('hidden');
+}
+async function enterRecoveryMode(){
+  $('setup').classList.add('hidden');
+  $('auth').classList.add('hidden');
+  $('app').classList.add('hidden');
+  $('recovery').classList.remove('hidden');
+}
+
+async function handleRecoveryLink(){
+  if(!sb)return false;
+  const hash=new URLSearchParams(location.hash.replace(/^#/,''));
+  const type=hash.get('type');
+  const access_token=hash.get('access_token');
+  const refresh_token=hash.get('refresh_token');
+  if(type!=='recovery' && !(access_token && refresh_token)) return false;
+  try{
+    if(access_token && refresh_token){
+      const {error}=await sb.auth.setSession({access_token,refresh_token});
+      if(error)throw error;
+    }
+    await enterRecoveryMode();
+    return true;
+  }catch(e){
+    $('setup').classList.add('hidden');
+    $('auth').classList.add('hidden');
+    $('recovery').classList.remove('hidden');
+    msg($('recoveryMsg'),'Não foi possível validar o link de recuperação. Solicite um novo e-mail.','error');
+    return true;
+  }
+}
+
+$('saveNewPassword')?.addEventListener('click',async()=>{
+  const p1=$('newPassword').value;
+  const p2=$('newPassword2').value;
+  if(p1.length<6)return msg($('recoveryMsg'),'A senha precisa ter pelo menos 6 caracteres.','error');
+  if(p1!==p2)return msg($('recoveryMsg'),'As senhas não são iguais.','error');
+  const {error}=await sb.auth.updateUser({password:p1});
+  if(error)return msg($('recoveryMsg'),error.message,'error');
+  msg($('recoveryMsg'),'Senha alterada com sucesso! Agora você pode entrar como cliente.','success');
+  $('newPassword').value=''; $('newPassword2').value='';
+  setTimeout(async()=>{await sb.auth.signOut(); location.hash=''; location.reload()},1200);
+});
+
+$('forgotBtn')?.addEventListener('click',async()=>{
+  const email=$('email').value.trim();
+  if(!email)return msg($('authMsg'),'Digite seu e-mail primeiro.','error');
+  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://kekelbarbearia2.netlify.app/'});
+  if(error)return msg($('authMsg'),error.message,'error');
+  msg($('authMsg'),'Enviamos o link de recuperação para seu e-mail.','success');
+});
+
+async function boot(user){
+  currentUser=user;
+  const {data:p,error}=await sb.from('profiles').select('*').eq('id',user.id).single();
+  if(error){msg($('authMsg'),'Perfil ainda não encontrado. Saia e entre novamente após alguns segundos.','error');return}
+  profile=p;
+  $('auth').classList.add('hidden'); $('app').classList.remove('hidden');
+  $('welcome').textContent='Olá, '+(p.full_name||user.email||'Kekel')+'!';
+  $('roleBadge').innerHTML=p.role==='admin'?'<span class="pill">ADMINISTRADOR</span>':'<span class="pill">CLIENTE</span>';
+  if(p.role==='admin'){$('adminArea').classList.remove('hidden');$('clientArea').classList.add('hidden'); await adminLoad()}
+  else{$('clientArea').classList.remove('hidden');$('adminArea').classList.add('hidden'); await clientLoad()}
+}
+$('logoutBtn').onclick=async()=>{await sb.auth.signOut();location.reload()}
+
+
+function guardClientBarberActions(){
+  const client=$('clientArea'), admin=$('adminArea');
+  const clientVisible=client && !client.classList.contains('hidden');
+  const adminVisible=admin && !admin.classList.contains('hidden');
+  if(!clientVisible || adminVisible) return;
+  document.querySelectorAll('.barber-admin-actions').forEach(el=>el.remove());
+  document.querySelectorAll('#barberPreview button').forEach(el=>el.remove());
+}
+let barbers=[];
+async function loadBarbers(){const r=await sb.from('barbers').select('*').eq('active',true).order('name');return r.error?[]:(r.data||[])}
+function renderBarberPreview(){const id=$('barber')?.value,b=barbers.find(x=>x.id===id),el=$('barberPreview');if(!el)return;el.innerHTML=b?`<div class="barber-choice">${b.photo_url?`<img src="${b.photo_url}" alt="">`:''}<strong>${b.name}</strong></div>`:''; guardClientBarberActions();}
+
+async function renderBarbers(){
+  barbers=await loadBarbers();
+  const el=$('barber');
+  if(!el)return;
+  el.innerHTML='<option value="">Qualquer barbeiro disponível</option>'+
+    barbers.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+  renderBarberPreview();
+}
+
+async function getDuration(serviceId,barberId){
+  const svc=services.find(s=>s.id===serviceId);
+  if(!svc)return 30;
+  if(!barberId)return Number(svc.duration_minutes)||30;
+  const r=await sb.from('barber_service_times').select('duration_minutes').eq('barber_id',barberId).eq('service_id',serviceId).maybeSingle();
+  return Number(r.data?.duration_minutes)||Number(svc.duration_minutes)||30;
+}
+async function deleteBarber(id){
+  if(!sb)return alert('Banco de dados não conectado.');
+  const c=await sb.from('bookings').select('id',{count:'exact',head:true}).eq('barber_id',id);
+  if(c.error)return alert('Erro ao verificar agendamentos: '+c.error.message);
+  if((c.count||0)>0)return alert('Este barbeiro possui agendamentos. Para preservar o histórico, use Desativar.');
+  if(!confirm('Excluir este barbeiro?'))return;
+  const r=await sb.from('barbers').delete().eq('id',id);
+  if(r.error)return alert('Erro ao excluir: '+r.error.message);
+  await loadBarberAdmin();
+  await renderBarbers();
+}
+async function toggleBarber(id,active){
+  if(!sb)return alert('Banco de dados não conectado.');
+  const r=await sb.from('barbers').update({active:Boolean(active)}).eq('id',id);
+  if(r.error)return alert('Erro ao alterar o barbeiro: '+r.error.message);
+  await loadBarberAdmin();
+  await renderBarbers();
+}
+async function saveBarberTimes(id){
+  for(const s of services){
+    const el=$(`bt_${id}_${s.id}`);
+    if(!el)continue;
+    const duration=Number(el.value);
+    if(!Number.isInteger(duration)||duration<5)continue;
+    const r=await sb.from('barber_service_times').upsert(
+      {barber_id:id,service_id:s.id,duration_minutes:duration},
+      {onConflict:'barber_id,service_id'}
+    );
+    if(r.error)return alert('Erro ao salvar tempo: '+r.error.message);
+  }
+  alert('Tempos salvos!');
+}
+function storagePathFromPublicUrl(url){
+  if(!url)return null;
+  try{
+    const marker='/object/public/';
+    const i=url.indexOf(marker);
+    if(i<0)return null;
+    const rest=decodeURIComponent(url.slice(i+marker.length));
+    const parts=rest.split('/');
+    parts.shift();
+    return parts.join('/')||null;
+  }catch(e){return null;}
+}
+async function removeOldBarberPhoto(url){
+  const path=storagePathFromPublicUrl(url);
+  if(!path)return;
+  const r=await sb.storage.from('Barbearia - Fotos').remove([path]);
+  if(r.error)console.warn('Não foi possível remover a foto antiga:',r.error.message);
+}
+function validateBarberPhoto(input){
+  const file=input?.files?.[0];
+  if(!file)return null;
+  if(!/^image\/(jpeg|png)$/.test(file.type)){alert('Escolha uma imagem JPG/JPEG ou PNG.');input.value='';return null;}
+  if(file.size>5*1024*1024){alert('A foto deve ter no máximo 5 MB.');input.value='';return null;}
+  return file;
+}
+function previewBarberPhoto(input,previewId,msgId,buttonId){
+  const file=validateBarberPhoto(input);
+  const img=document.getElementById(previewId);
+  const msg=document.getElementById(msgId);
+  const btn=document.getElementById(buttonId);
+  if(!file){if(btn)btn.disabled=true;if(msg)msg.textContent='';return;}
+  if(img){img.src=URL.createObjectURL(file);img.style.display='block';}
+  if(msg)msg.textContent='Foto selecionada. Toque em “Enviar foto” para enviar ao Storage.';
+  if(btn)btn.disabled=false;
+}
+async function replaceBarberPhoto(id,input){
+  const file=validateBarberPhoto(input);
+  if(!file)return;
+  const btn=input.closest('.photo-editor')?.querySelector('.send-photo-btn');
+  const img=input.closest('.photo-editor')?.querySelector('.photo-replace-preview');
+  const msg=input.closest('.photo-editor')?.querySelector('.photo-msg');
+  try{
+    if(btn){btn.disabled=true;btn.textContent='Enviando...';}
+    if(msg)msg.textContent='Enviando foto...';
+    const current=await sb.from('barbers').select('photo_url').eq('id',id).maybeSingle();
+    if(current.error)throw new Error(current.error.message);
+    const photo_url=await uploadBarberPhoto(file);
+    const r=await sb.from('barbers').update({photo_url}).eq('id',id).select('id,photo_url').maybeSingle();
+    if(r.error)throw new Error(r.error.message);
+    if(!r.data)throw new Error('A foto foi enviada, mas o barbeiro não foi atualizado.');
+    if(current.data?.photo_url && current.data.photo_url!==photo_url)await removeOldBarberPhoto(current.data.photo_url);
+    if(msg)msg.textContent='✅ Foto enviada e salva com sucesso!';
+    await loadBarberAdmin(); await renderBarbers();
+  }catch(e){
+    if(msg)msg.textContent='❌ Erro: '+e.message;
+    else alert('Erro ao atualizar foto: '+e.message);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='📤 Enviar foto';}
+    input.value='';
+  }
+}
+
+async function removeBarberPhoto(id){
+  if(!confirm('Remover a foto deste barbeiro?'))return;
+  try{
+    const current=await sb.from('barbers').select('photo_url').eq('id',id).maybeSingle();
+    if(current.error)throw new Error(current.error.message);
+    const r=await sb.from('barbers').update({photo_url:null}).eq('id',id);
+    if(r.error)throw new Error(r.error.message);
+    if(current.data?.photo_url)await removeOldBarberPhoto(current.data.photo_url);
+    await loadBarberAdmin(); await renderBarbers();
+    alert('Foto removida!');
+  }catch(e){alert('Erro ao remover foto: '+e.message)}
+}
+function previewReplaceBarberPhoto(id,input){
+  const file=validateBarberPhoto(input);
+  const box=input.closest('.photo-editor');
+  const img=box?.querySelector('.photo-replace-preview');
+  const btn=box?.querySelector('.send-photo-btn');
+  const msg=box?.querySelector('.photo-msg');
+  if(!file){if(btn)btn.disabled=true;if(msg)msg.textContent='';return;}
+  if(img){img.src=URL.createObjectURL(file);img.style.display='block';}
+  if(btn)btn.disabled=false;
+  if(msg)msg.textContent='Foto selecionada. Toque em “Enviar foto”.';
+}
+
+async function loadBarberAdmin(){
+  const r=await sb.from('barbers').select('*').order('name');
+  if(r.error){$('barberList').innerHTML='<div class="notice error">Erro ao carregar barbeiros: '+r.error.message+'</div>';return}
+  const bs=r.data||[];
+  $('barberList').innerHTML=bs.map(b=>`<div class="barber-card">
+    <div class="barber-main">
+      ${b.photo_url?`<img class="barber-photo" src="${b.photo_url}" alt="${b.name}">`:'<div class="barber-photo" style="display:grid;place-items:center">📷</div>'}
+      <div><strong>${b.name}</strong><div class="small">${b.active?'Ativo':'Inativo'}</div></div>
+    </div>
+    <div class="barber-actions">
+      <button type="button" onclick="toggleBarber('${b.id}',${!b.active})">${b.active?'Desativar':'Ativar'}</button>
+      <button type="button" class="danger" onclick="deleteBarber('${b.id}')">Excluir</button>
+    </div>
+    <div class="photo-editor">
+      <label style="display:block">Trocar foto<input type="file" accept="image/jpeg,image/png" onchange="previewReplaceBarberPhoto('${b.id}',this)"></label>
+      <img class="preview-photo photo-replace-preview" style="display:none;margin-top:8px" alt="Prévia da nova foto">
+      <div class="photo-upload-row">
+        <button type="button" class="secondary send-photo-btn" disabled onclick="replaceBarberPhoto('${b.id}',this.closest('.photo-editor').querySelector('input[type=file]'))">📤 Enviar foto</button>
+        ${b.photo_url?`<button type="button" class="secondary" onclick="removeBarberPhoto('${b.id}')">Remover foto</button>`:'<span></span>'}
+      </div>
+      <div class="small photo-msg" style="margin-top:6px"></div>
+    </div>
+    <div class="times">${services.map(s=>`<label>${s.name}<input id="bt_${b.id}_${s.id}" type="number" min="5" step="5" value="${s.duration_minutes}"></label>`).join('')}</div>
+    <button type="button" onclick="saveBarberTimes('${b.id}')">Salvar tempos</button>
+  </div>`).join('')||'<p class="small">Nenhum barbeiro cadastrado.</p>';
+}
+
+let selectedBookingTime=null; let bookingBusy=false;
+function clearBookingSelection(){selectedBookingTime=null;$('bookingConfirm')?.classList.add('hidden');if($('bookingSelection'))$('bookingSelection').textContent='';}
+function selectBookingTime(time){selectedBookingTime=time;[...$('slots').querySelectorAll('button[data-time]')].forEach(b=>b.classList.toggle('slot-selected',b.dataset.time===time));const svc=services.find(x=>x.id===$('service').value);const barber=barbers.find(x=>x.id===$('barber').value);$('bookingSelection').textContent=`Horário selecionado: ${time} • ${svc?.name||'Serviço'} • ${barber?.name||'Barbeiro disponível'}`;$('bookingConfirm').classList.remove('hidden');}
+$('date').onchange=()=>{clearBookingSelection();loadSlots()}; $('service').onchange=()=>{clearBookingSelection();loadSlots()}; $('barber').onchange=()=>{clearBookingSelection();renderBarberPreview();loadSlots()};
+
+async function buildSlots(){
+  const out=[];
+  const [h0,m0]=String(settings.opening_time||'08:00').slice(0,5).split(':').map(Number);
+  const [eh,em]=String(settings.closing_time||'19:00').slice(0,5).split(':').map(Number);
+  const openMin=h0*60+m0, closeMin=eh*60+em;
+  const svc=services.find(x=>x.id===$('service').value);
+  if(!svc || closeMin<=openMin)return out;
+  const chosenBarber=$('barber').value||null;
+  const candidateBarbers=chosenBarber?barbers.filter(b=>b.id===chosenBarber):barbers;
+  if(!candidateBarbers.length)return out;
+  const day=$('date').value;
+  const now=new Date();
+  const today=now.toISOString().slice(0,10);
+
+  for(let minute=openMin; minute<closeMin; minute+=30){
+    const time=String(Math.floor(minute/60)).padStart(2,'0')+':'+String(minute%60).padStart(2,'0');
+    if(day===today){
+      const slotDate=new Date(day+'T'+time+':00');
+      if(slotDate<=now)continue;
+    }
+    const durations=await Promise.all(candidateBarbers.map(b=>getDuration(svc.id,b.id)));
+    const usable=durations.filter((d,i)=>minute+d<=closeMin).map((d,i)=>({barber:candidateBarbers[i],duration:d}));
+    if(!usable.length)continue;
+    out.push({time, duration: chosenBarber ? usable[0].duration : Math.min(...usable.map(x=>x.duration)), usable});
+  }
+  return out;
+}
+
+async function loadSlots(){
+  const day=$('date').value;
+  if(!day)return;
+  const st=await sb.from('business_settings').select('*').limit(1).maybeSingle();
+  if(st.data)settings=st.data;
+  const start=day+'T00:00:00', end=day+'T23:59:59';
+  const b=await sb.from('bookings').select('start_at,end_at,status,barber_id').gte('start_at',start).lte('start_at',end).neq('status','cancelled');
+  if(b.error)return alert('Erro ao carregar horários: '+b.error.message);
+  const rows=b.data||[];
+  const chosenBarber=$('barber').value||null;
+  const svc=services.find(x=>x.id===$('service').value);
+  if(!svc){$('slots').innerHTML='<p class="small">Cadastre um serviço ativo para começar.</p>';return;}
+  const slots=await buildSlots();
+  $('slots').innerHTML='<div class="grid">'+slots.map(item=>{
+    const slotStart=new Date(day+'T'+item.time+':00');
+    const available=item.usable.filter(x=>{
+      const slotEnd=new Date(slotStart.getTime()+x.duration*60000);
+      return !rows.some(r=>r.barber_id===x.barber.id && new Date(r.start_at)<slotEnd && new Date(r.end_at)>slotStart);
+    });
+    const busy=!available.length;
+    return `<button type="button" class="${busy?'secondary':''}" ${busy?'disabled':''} data-time="${item.time}">${item.time}${busy?' — ocupado':' — disponível'}</button>`;
+  }).join('')+'</div>';
+  [...$('slots').querySelectorAll('button[data-time]')].forEach(btn=>btn.onclick=()=>selectBookingTime(btn.dataset.time));
+  if(selectedBookingTime && !slots.some(x=>x.time===selectedBookingTime)){clearBookingSelection();}
+}
+
+
+async function confirmBooking(){
+  if(bookingBusy)return;
+  const time=selectedBookingTime;
+  if(!time)return alert('Escolha um horário antes de confirmar.');
+  bookingBusy=true;
+  const btn=$('confirmBooking');
+  if(btn){btn.disabled=true;btn.textContent='Confirmando...';btn.classList.add('confirming');}
+  try{
+    const svc=services.find(x=>x.id===$('service').value);
+    if(!svc)throw new Error('Selecione um serviço.');
+    const day=$('date').value;
+    const chosenBarber=$('barber').value||null;
+    const slotStart=new Date(day+'T'+time+':00');
+    const [eh,em]=String(settings.closing_time||'19:00').slice(0,5).split(':').map(Number);
+    const close=new Date(day+'T'+String(eh).padStart(2,'0')+':'+String(em).padStart(2,'0')+':00');
+    if(slotStart>=close)throw new Error('Esse horário está fora do funcionamento da barbearia.');
+    const startISO=slotStart.toISOString();
+    // Reconsulta os agendamentos imediatamente antes do INSERT.
+    const q=await sb.from('bookings').select('id,barber_id,start_at,end_at').lt('start_at',close.toISOString()).gt('end_at',startISO).neq('status','cancelled');
+    if(q.error)throw new Error(q.error.message);
+    const rows=q.data||[];
+    let barberId=chosenBarber; let duration=null;
+    const candidates=(barberId?barbers.filter(b=>b.id===barberId):barbers);
+    for(const barber of candidates){
+      const d=await getDuration(svc.id,barber.id);
+      const slotEnd=new Date(slotStart.getTime()+d*60000);
+      if(slotEnd>close)continue;
+      const conflict=rows.some(x=>x.barber_id===barber.id && new Date(x.start_at)<slotEnd && new Date(x.end_at)>slotStart);
+      if(!conflict){barberId=barber.id;duration=d;break;}
+    }
+    if(!barberId||!duration)throw new Error('Esse horário acabou de ser ocupado. Escolha outro horário.');
+    const endAt=new Date(slotStart.getTime()+duration*60000);
+    const {error}=await sb.from('bookings').insert({client_id:currentUser.id,service_id:svc.id,barber_id:barberId,start_at:startISO,end_at:endAt.toISOString(),status:'confirmed'});
+    if(error)throw new Error(error.message);
+    alert('Agendamento confirmado!');
+    clearBookingSelection();
+    await loadSlots(); await loadMine();
+  }catch(e){alert('Não foi possível confirmar o agendamento: '+e.message)}
+  finally{bookingBusy=false;if(btn){btn.disabled=false;btn.textContent='✅ Confirmar agendamento';btn.classList.remove('confirming')}}
+}
+$('confirmBooking').onclick=confirmBooking;
+
+async function loadMine(){
+  const {data}=await sb.from('bookings').select('*, services(name,price)').eq('client_id',currentUser.id).order('start_at',{ascending:false}).limit(30);
+  $('myBookings').innerHTML=(data||[]).length?(data||[]).map(b=>`<div class="item"><strong>${b.services?.name||'Serviço'}</strong>${fmtDate(b.start_at)}<div class="small">${b.status}</div>${b.status==='confirmed'?`<button class="danger" onclick="cancelBooking('${b.id}')">Cancelar</button>`:''}</div>`).join(''):'<p class="small">Nenhum agendamento.</p>';
+}
+async function cancelBooking(id){if(!confirm('Cancelar este horário?'))return;const {error}=await sb.from('bookings').update({status:'cancelled'}).eq('id',id).eq('client_id',currentUser.id);if(error)alert(error.message);else await loadMine()}
+async function loadMembership(){
+  const {data}=await sb.from('memberships').select('*').eq('client_id',currentUser.id).order('created_at',{ascending:false}).limit(1).maybeSingle();
+  const activePlans=(await sb.from('membership_plans').select('*').eq('active',true).order('sort_order')).data||[];
+  $('membershipBox').innerHTML=data?`<div class="item"><strong>${data.plan_name||'Plano Kekel'}</strong>${money(data.amount||0)} / mês<br>Status: <span class="pill">${data.status}</span></div>`:
+  (activePlans.length?activePlans.map(p=>`<div class="item"><strong>${p.name}</strong><br>${money(p.price)} / mês</div>`).join(''):'<div class="notice">Nenhum plano ativo no momento.</div>');
+}
+async function loadLoyalty(){
+  const {count}=await sb.from('haircuts').select('*',{count:'exact',head:true}).eq('client_id',currentUser.id);
+  const n=count||0, mark=n%10;
+  $('loyaltyBox').innerHTML=`<div class="item"><strong>${mark}/10 cortes</strong><div style="font-size:28px;letter-spacing:5px">${'✂️'.repeat(mark)}${'○'.repeat(10-mark)}</div><p class="small">Total registrado: ${n}. A cada 10 cortes, 1 corte grátis.</p></div>`;
+}
+
+
+async function clientLoad(){
+  const s=await sb.from('services').select('*').eq('active',true).order('name');
+  services=s.data||[];
+  $('service').innerHTML=services.map(x=>`<option value="${x.id}">${x.name} — ${money(x.price)}</option>`).join('');
+  const today=new Date();
+  const iso=today.toISOString().slice(0,10);
+  $('date').min=iso;
+  if(!$('date').value)$('date').value=iso;
+  await renderBarbers();
+  const activePlans=(await sb.from('membership_plans').select('*').eq('active',true).order('sort_order')).data||[];
+  $('planTitle').textContent=activePlans.length?'Planos mensais':'Plano mensal';
+  await loadSlots();
+  await loadMine();
+  await loadMembership();
+  await loadLoyalty();
+}
+
+let membershipPlans=[];
+async function loadPlans(){
+  const r=await sb.from('membership_plans').select('*').order('sort_order',{ascending:true});
+  if(r.error){$('planAdminList')&&($('planAdminList').innerHTML='<div class="notice error">Crie a tabela membership_plans no Supabase para usar os 3 planos.</div>');return [];}
+  membershipPlans=r.data||[];
+  return membershipPlans;
+}
+function renderPlanAdmin(){
+  const el=$('planAdminList'); if(!el)return;
+  el.innerHTML=membershipPlans.map(p=>`<div class="item">
+    <div class="row"><div style="flex:1"><label>Nome</label><input id="planName_${p.id}" value="${String(p.name||'').replace(/"/g,'&quot;')}"></div><div><label>Valor (R$)</label><input id="planPrice_${p.id}" type="number" min="0" step="0.01" value="${p.price}"></div></div>
+    <div class="small">${p.active?'Ativo':'Inativo'}</div>
+    <div class="service-actions"><button type="button" onclick="savePlan('${p.id}')">Salvar</button><button type="button" class="secondary" onclick="togglePlan('${p.id}',${!p.active})">${p.active?'Desativar':'Ativar'}</button></div>
+  </div>`).join('')||'<p class="small">Nenhum plano cadastrado.</p>';
+}
+async function savePlan(id){
+  const name=$(`planName_${id}`).value.trim(), price=kekelPriceNumber($(`planPrice_${id}`).value);
+  if(!name)return alert('Digite o nome do plano.');
+  if(price===null||price<0)return alert('Digite um valor válido.');
+  const r=await sb.from('membership_plans').update({name,price}).eq('id',id).select('*').maybeSingle();
+  if(r.error)return alert('Erro ao salvar plano: '+r.error.message);
+  await loadPlans();renderPlanAdmin();
+}
+async function togglePlan(id,active){const r=await sb.from('membership_plans').update({active:Boolean(active)}).eq('id',id);if(r.error)return alert(r.error.message);await loadPlans();renderPlanAdmin();}
+async function adminLoad(){
+  const s=await sb.from('services').select('*').order('name');services=s.data||[];
+  const st=await sb.from('business_settings').select('*').limit(1).maybeSingle();if(st.data){settings=st.data;$('openTime').value=settings.opening_time;$('closeTime').value=settings.closing_time}
+  await loadPlans();renderPlanAdmin();
+  const today=new Date();$('adminDate').value=today.toISOString().slice(0,10);await loadAdminAgenda();await loadBarberAdmin();await loadClients();await loadServiceList();
+}
+$('adminDate').onchange=loadAdminAgenda;
+async function loadAdminAgenda(){
+  const d=$('adminDate').value;const {data}=await sb.from('bookings').select('*, profiles(full_name,phone), services(name,price), barbers(name)').gte('start_at',d+'T00:00:00').lte('start_at',d+'T23:59:59').order('start_at');
+  $('adminBookings').innerHTML=(data||[]).length?(data||[]).map(b=>`<div class="item"><strong>${new Date(b.start_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})} — ${b.profiles?.full_name||'Cliente'}</strong>${b.services?.name||''} • ${b.barbers?.name||'Qualquer barbeiro'} • ${b.profiles?.phone||''}<div class="small">Status: ${b.status}</div><div class="row"><button onclick="completeBooking('${b.id}','${b.client_id}')">Concluir corte</button><button class="danger" onclick="adminCancel('${b.id}')">Cancelar</button></div></div>`).join(''):'<p class="small">Nenhum horário neste dia.</p>';
+}
+async function completeBooking(id,client){const r=await sb.from('bookings').update({status:'completed'}).eq('id',id);if(r.error)return alert(r.error.message);const h=await sb.from('haircuts').insert({client_id:client,booking_id:id});if(h.error&& !String(h.error.message).includes('duplicate'))alert(h.error.message);await loadAdminAgenda()}
+async function adminCancel(id){const r=await sb.from('bookings').update({status:'cancelled'}).eq('id',id);if(r.error)alert(r.error.message);else await loadAdminAgenda()}
+async function loadClients(){const {data}=await sb.from('profiles').select('*').order('created_at',{ascending:false});$('clients').innerHTML=(data||[]).map(c=>`<div class="item"><strong>${c.full_name||'Sem nome'}</strong>${c.phone||''}<div class="small">${c.role}</div></div>`).join('')}
+
+async function loadServiceList(){
+  $('serviceList').innerHTML=services.map(s=>`<div class="item">
+    <div><label>Nome</label><input id="svcName_${s.id}" type="text" value="${String(s.name||'').replace(/"/g,'&quot;')}"></div>
+    <div class="row">
+      <div><label>Duração (min)</label><input id="svcDur_${s.id}" type="number" min="5" step="5" value="${s.duration_minutes||30}"></div>
+      <div><label>Preço (R$)</label><input id="svcPrice_${s.id}" data-service-price="${s.id}" type="number" min="0" step="0.01" value="${s.price}"></div>
+    </div>
+    <div class="small" style="margin-top:6px">Status: ${s.active?'Ativo':'Inativo'}</div>
+    <div class="service-actions">
+      <button type="button" onclick="saveService('${s.id}')">Salvar</button>
+      <button type="button" class="secondary" onclick="toggleService('${s.id}',${!s.active})">${s.active?'Desativar':'Ativar'}</button>
+    </div>
+  </div>`).join('')||'<p class="small">Nenhum serviço cadastrado.</p>';
+}
+async function saveService(id){
+  const nameEl=document.querySelector(`#svcName_${id}`), durEl=document.querySelector(`#svcDur_${id}`), priceEl=document.querySelector(`#svcPrice_${id}`);
+  const name=(nameEl?.value||'').trim();
+  const duration=Number(durEl?.value);
+  const price=kekelPriceNumber(priceEl?.value||'');
+  if(!name)return alert('Digite o nome do serviço.');
+  if(!Number.isInteger(duration)||duration<5)return alert('Digite uma duração válida.');
+  if(price===null || price<0)return alert('Digite um preço válido.');
+  const r=await sb.from('services').update({name,duration_minutes:duration,price}).eq('id',id).select('id,name,duration_minutes,price,active').maybeSingle();
+  if(r.error){alert('Erro ao salvar o serviço: '+r.error.message);return;}
+  if(!r.data){alert('O serviço não foi alterado. Verifique as permissões da tabela services.');return;}
+  const s=await sb.from('services').select('*').order('name');
+  if(s.error)return alert('Erro ao recarregar serviços: '+s.error.message);
+  services=s.data||[];
+  await loadServiceList();
+  alert('Serviço salvo!');
+}
+async function toggleService(id,active){
+  const r=await sb.from('services').update({active:Boolean(active)}).eq('id',id).select('id,active').maybeSingle();
+  if(r.error)return alert('Erro ao alterar o status: '+r.error.message);
+  if(!r.data)return alert('O status não foi alterado. Verifique se você está logado como Super Administrador.');
+  const s=await sb.from('services').select('*').order('name');
+  if(s.error)return alert('Status alterado, mas não foi possível recarregar a lista: '+s.error.message);
+  services=s.data||[];
+  await loadServiceList();
+}
+
+
+async function uploadBarberPhoto(file){
+  if(!file)return null;
+  const ext=file.type==='image/png'?'png':'jpg';
+  const path=`barbers/${crypto.randomUUID()}.${ext}`;
+  const upload=await sb.storage.from('Barbearia - Fotos').upload(path,file,{upsert:false,contentType:file.type,cacheControl:'3600'});
+  if(upload.error){const code=upload.error.statusCode||upload.error.name||'desconhecido'; const msg=String(upload.error.message||''); if(msg.toLowerCase().includes('bucket not found')||String(code)==='404') throw new Error('Bucket Barbearia - Fotos não encontrado. Confira o Storage do Supabase.'); if(String(code)==='403'||msg.toLowerCase().includes('row-level security')||msg.toLowerCase().includes('not authorized')) throw new Error('Upload recusado pelo Storage (403). Verifique a sessão do administrador e as políticas do bucket Barbearia - Fotos. Detalhe: '+msg); throw new Error('Upload da foto falhou: '+msg+' (código: '+code+')');}
+  const pub=sb.storage.from('Barbearia - Fotos').getPublicUrl(path);
+  return pub.data.publicUrl;
+}
+let pendingNewBarberPhotoUrl=null;
+let pendingNewBarberPhotoPath=null;
+$('newBarberPhoto')?.addEventListener('change',async e=>{if(pendingNewBarberPhotoPath){try{await sb.storage.from('Barbearia - Fotos').remove([pendingNewBarberPhotoPath])}catch(_){} } pendingNewBarberPhotoUrl=null;pendingNewBarberPhotoPath=null;previewBarberPhoto(e.target,'barberPhotoPreview','newBarberPhotoMsg','uploadNewBarberPhoto')});
+$('uploadNewBarberPhoto')?.addEventListener('click',async()=>{
+  const input=$('newBarberPhoto'),file=validateBarberPhoto(input);
+  if(!file)return;
+  const btn=$('uploadNewBarberPhoto');
+  try{btn.disabled=true;btn.textContent='Enviando...';$('newBarberPhotoMsg').textContent='Enviando foto para o Storage...';
+    const ext=file.type==='image/png'?'png':'jpg';
+    const path=`barbers/${crypto.randomUUID()}.${ext}`;
+    const upload=await sb.storage.from('Barbearia - Fotos').upload(path,file,{upsert:false,contentType:file.type,cacheControl:'3600'});
+    if(upload.error){const code=upload.error.statusCode||upload.error.name||'desconhecido'; const msg=String(upload.error.message||''); if(msg.toLowerCase().includes('bucket not found')||String(code)==='404') throw new Error("Bucket 'Barbearia - Fotos' não encontrado. Confira o Storage do Supabase."); if(String(code)==='403'||msg.toLowerCase().includes('row-level security')||msg.toLowerCase().includes('not authorized')) throw new Error('Upload recusado pelo Storage (403). Verifique a sessão do administrador e as políticas do bucket Barbearia - Fotos. Detalhe: '+msg); throw new Error('Upload da foto falhou: '+msg+' (código: '+code+')');}
+    const pub=sb.storage.from('Barbearia - Fotos').getPublicUrl(path);
+    pendingNewBarberPhotoUrl=pub.data.publicUrl; pendingNewBarberPhotoPath=path;
+    $('newBarberPhotoMsg').textContent='✅ Foto enviada com sucesso. Agora toque em “Adicionar barbeiro”.';
+  }catch(e){pendingNewBarberPhotoUrl=null;pendingNewBarberPhotoPath=null;$('newBarberPhotoMsg').textContent='❌ '+e.message;alert(e.message)}
+  finally{btn.disabled=false;btn.textContent='📤 Enviar foto';}
+});
+$('addBarber').onclick=async()=>{
+  const name=$('newBarberName').value.trim();
+  if(!name)return alert('Digite o nome do barbeiro.');
+  try{
+    const payload={name,active:true}; if(pendingNewBarberPhotoUrl)payload.photo_url=pendingNewBarberPhotoUrl;
+    const r=await sb.from('barbers').insert(payload).select('*').maybeSingle();
+    if(r.error)throw new Error(r.error.message);
+    $('newBarberName').value=''; $('newBarberPhoto').value=''; $('barberPhotoPreview').style.display='none'; $('newBarberPhotoMsg').textContent=''; pendingNewBarberPhotoUrl=null;pendingNewBarberPhotoPath=null;
+    await loadBarberAdmin(); await renderBarbers();
+    alert('Barbeiro adicionado!');
+  }catch(e){
+    if(pendingNewBarberPhotoPath){try{await sb.storage.from('Barbearia - Fotos').remove([pendingNewBarberPhotoPath])}catch(_){} }
+    alert('Erro ao adicionar barbeiro: '+e.message);
+  }
+};
+
+$('addService').onclick=async()=>{
+  const name=$('newServiceName').value.trim();
+  const duration=Number($('newServiceDuration').value);
+  const price=kekelPriceNumber($('newServicePrice').value);
+  if(!name)return alert('Digite o nome do serviço.');
+  if(!Number.isInteger(duration)||duration<5)return alert('Digite uma duração válida (mínimo 5 minutos).');
+  if(price===null||price<0)return alert('Digite um preço válido.');
+  const r=await sb.from('services').insert({name,duration_minutes:duration,price,active:true}).select('*').maybeSingle();
+  if(r.error)return alert('Erro ao adicionar serviço: '+r.error.message);
+  if(!r.data)return alert('O serviço não foi criado. Verifique se você está logado como Super Administrador.');
+  const s=await sb.from('services').select('*').order('name');
+  if(s.error)return alert('Serviço criado, mas não foi possível recarregar a lista: '+s.error.message);
+  services=s.data||[];
+  $('newServiceName').value=''; $('newServiceDuration').value='30'; $('newServicePrice').value='35';
+  await loadServiceList();
+  alert('Serviço adicionado com sucesso!');
+};
+$('addPlan').onclick=async()=>{
+  const name=$('newPlanName').value.trim(),price=kekelPriceNumber($('newPlanPrice').value);
+  if(!name)return alert('Digite o nome do plano.');
+  if(price===null||price<0)return alert('Digite um valor válido.');
+  if(membershipPlans.length>=3)return alert('Você já possui 3 planos.');
+  const r=await sb.from('membership_plans').insert({name,price,active:true,sort_order:membershipPlans.length+1}).select('*').maybeSingle();
+  if(r.error)return alert('Erro ao adicionar plano: '+r.error.message);
+  $('newPlanName').value='';$('newPlanPrice').value='';await loadPlans();renderPlanAdmin();
+};
+$('saveSettings').onclick=async()=>{
+  const opening_time=$('openTime').value,closing_time=$('closeTime').value;
+  if(!opening_time||!closing_time)return alert('Informe abertura e fechamento.');
+  if(opening_time>=closing_time)return alert('O horário de fechamento deve ser depois da abertura.');
+  const existing=await sb.from('business_settings').select('id').limit(1);
+  if(existing.error)return alert('Erro ao localizar configuração: '+existing.error.message);
+  const row=(existing.data||[])[0];
+  let r;
+  if(row) {
+    r=await sb.from('business_settings').update({opening_time,closing_time}).eq('id',row.id).select('id,opening_time,closing_time').maybeSingle();
+  } else {
+    r=await sb.from('business_settings').insert({opening_time,closing_time}).select('id,opening_time,closing_time').maybeSingle();
+  }
+  if(r.error)return alert('Erro ao salvar horários: '+r.error.message);
+  if(!r.data)return alert('O horário não foi confirmado pelo banco. Tente novamente.');
+  settings={...settings,opening_time:r.data.opening_time,closing_time:r.data.closing_time};
+  $('openTime').value=r.data.opening_time;
+  $('closeTime').value=r.data.closing_time;
+  alert('Horários salvos com sucesso!');
+};
+
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.tabpane').forEach(x=>x.classList.add('hidden'));$('tab-'+b.dataset.tab).classList.remove('hidden')});
+document.querySelectorAll('[data-atab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-atab]').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.atabpane').forEach(x=>x.classList.add('hidden'));$('atab-'+b.dataset.atab).classList.remove('hidden')});
+
+
+
+
+let selectedAuthRole='client';
+
+function showAuth(role){
+  selectedAuthRole=role;
+  $('setup').classList.add('hidden');
+  $('auth').classList.remove('hidden');
+  $('authTitle').textContent = role==='admin' ? 'Login do Administrador' : 'Login do Cliente';
+  $('authHint').textContent = role==='admin'
+    ? 'Entre com sua conta administrativa.'
+    : 'Entre ou crie sua conta para agendar seu corte.';
+  $('signupFields').classList.toggle('hidden', role==='admin');
+  $('signupBtn').classList.toggle('hidden', role==='admin');
+  $('authMsg').textContent='';
+}
+
+$('clientEntry')?.addEventListener('click',()=>showAuth('client'));
+$('adminEntry')?.addEventListener('click',()=>showAuth('admin'));
+$('backHome')?.addEventListener('click',()=>{
+  $('auth').classList.add('hidden');
+  $('setup').classList.remove('hidden');
+});
+
+$('loginBtn')?.addEventListener('click',async()=>{
+  const email=$('email').value.trim();
+  const password=$('password').value;
+  if(!email||!password){
+    msg($('authMsg'),'Informe e-mail e senha.','error');
+    return;
+  }
+  const {data,error}=await sb.auth.signInWithPassword({email,password});
+  if(error){
+    msg($('authMsg'),'E-mail ou senha inválidos. Se ainda não possui conta, toque em "Criar conta".','error');
+    return;
+  }
+  await boot(data.user);
+});
+
+$('signupBtn')?.addEventListener('click',async()=>{
+  const name=$('signupName').value.trim();
+  const phone=$('signupPhone').value.trim();
+  const email=$('email').value.trim();
+  const password=$('password').value;
+
+  if(!name||!email||!password){
+    msg($('authMsg'),'Preencha nome, e-mail e senha.','error');
+    return;
+  }
+  if(password.length<6){
+    msg($('authMsg'),'A senha precisa ter pelo menos 6 caracteres.','error');
+    return;
+  }
+
+  const {data,error}=await sb.auth.signUp({
+    email,
+    password,
+    options:{data:{full_name:name,phone:phone}}
+  });
+
+  if(error){
+    msg($('authMsg'),error.message,'error');
+    return;
+  }
+
+  if(data?.user){
+    const p=await sb.from('profiles').upsert({
+      id:data.user.id,
+      full_name:name,
+      phone:phone
+    });
+    if(p.error){
+      msg($('authMsg'),p.error.message,'error');
+      return;
+    }
+  }
+
+  if(data?.session){
+    await boot(data.user);
+  }else{
+    msg($('authMsg'),'Conta criada! Confirme seu e-mail, se solicitado, e depois faça login.','success');
+  }
+});
+
+window.addEventListener('load',async()=>{
+  await connect();
+  if(sb){
+    const handled=await handleRecoveryLink();
+    if(!handled){
+      // Deliberately do not auto-open an old session. The home screen remains public.
+      await sb.auth.signOut();
+    }
+  }
+});
+</script>
+
+
+</body>
+</html>
