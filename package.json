@@ -21,7 +21,8 @@
     "@capacitor/push-notifications": "latest"
   },
   "devDependencies": {
-    "@capacitor/cli": "latest",
-    "serve": "latest"
-  }
+  "@capacitor/cli": "latest",
+  "serve": "latest",
+  "typescript": "latest"
+}
 }
