@@ -1,8 +1,8 @@
 {
   "name": "kekel-barbearia-mobile",
-  "version": "1.5.1",
+  "version": "1.5.3",
   "private": true,
-  "description": "Kekel Barbearia Mobile V1.5.1 - pacote corrigido para envio pelo celular e preparação Android",
+  "description": "Kekel Barbearia Mobile V1.5.3 - correção de separação visual de perfis",
   "scripts": {
     "dev": "npx serve www",
     "build": "echo Mobile web assets ready for Capacitor",
@@ -21,8 +21,7 @@
     "@capacitor/push-notifications": "latest"
   },
   "devDependencies": {
-  "@capacitor/cli": "latest",
-  "serve": "latest",
-  "typescript": "latest"
-}
+    "@capacitor/cli": "latest",
+    "serve": "latest"
+  }
 }
