@@ -1,3 +1,4 @@
+
 {
   "name": "kekel-barbearia-mobile",
   "version": "1.5.3",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "latest",
-    "serve": "latest"
+    "serve": "latest",
+    "typescript": "latest"
   }
 }
