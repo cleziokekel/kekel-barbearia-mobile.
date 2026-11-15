@@ -15,6 +15,25 @@
 const cfg=window.KEKEL_CONFIG||{};let sb=null;let currentUser=null;
 function init(){if(!window.supabase||!cfg.SUPABASE_URL||!cfg.SUPABASE_ANON_KEY)return;sb=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY);sb.auth.getSession().then(({data})=>{if(data.session){currentUser=data.session.user;enterDashboard()}});sb.auth.onAuthStateChange((_e,s)=>{currentUser=s?.user||null})}
 function show(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');scrollTo(0,0)}
+  async function logout(){
+  if(!sb){
+    show('home');
+    return;
+  }
+
+  const {error}=await sb.auth.signOut();
+
+  if(error){
+    alert('Não foi possível sair: '+error.message);
+    return;
+  }
+
+  currentUser=null;
+  document.getElementById('loginEmail').value='';
+  document.getElementById('loginPassword').value='';
+  document.getElementById('loginMsg').innerHTML='';
+  show('home');
+}
 function msg(id,text,ok=false){document.getElementById(id).innerHTML='<div class="msg '+(ok?'ok':'err')+'">'+text+'</div>'}
 let selectedAccessRole='client'; function openClientAccess(){selectedAccessRole='client';loginTitle.textContent='Acesso do Cliente';loginHint.textContent='Entre ou crie sua conta para agendar seu serviço.';loginSignupBtn.classList.remove('hidden');show('login')} function openAdminAccess(){selectedAccessRole='admin';loginTitle.textContent='Acesso do Super Administrador';loginHint.textContent='Entre com sua conta administrativa.';loginSignupBtn.classList.add('hidden');show('login')} async function login(){if(!sb)return msg('loginMsg','Configuração do Supabase não carregada.');const email=loginEmail.value.trim(),password=loginPassword.value;if(!email||!password)return msg('loginMsg','Informe e-mail e senha.');loginMsg.innerHTML='<div class="msg ok"><span class="spinner"></span> Entrando...</div>';const r=await sb.auth.signInWithPassword({email,password});if(r.error)return msg('loginMsg',r.error.message);currentUser=r.data.user;const pr=await sb.from('profiles').select('role').eq('id',currentUser.id).maybeSingle();if(pr.error||!pr.data?.role){await sb.auth.signOut();currentUser=null;return msg('loginMsg','Não foi possível confirmar o perfil desta conta. Tente novamente ou peça ao administrador para verificar o cadastro.')}const role=pr.data.role;if(selectedAccessRole==='admin'&&role!=='admin'){await sb.auth.signOut();currentUser=null;return msg('loginMsg','Esta conta não tem permissão de administrador. Use o acesso de cliente.')}if(selectedAccessRole==='client'&&role==='admin'){await sb.auth.signOut();currentUser=null;return msg('loginMsg','Esta é uma conta administrativa. Volte e escolha SUPER ADMINISTRADOR.')}enterDashboard()}
 async function register(){if(!sb)return msg('regMsg','Configuração do Supabase não carregada.');const full_name=regName.value.trim(),phone=regPhone.value.trim(),email=regEmail.value.trim(),password=regPassword.value;if(!full_name||!email||password.length<6)return msg('regMsg','Preencha nome, e-mail e uma senha com pelo menos 6 caracteres.');regMsg.innerHTML='<div class="msg ok"><span class="spinner"></span> Criando conta...</div>';const r=await sb.auth.signUp({email,password,options:{data:{full_name,phone}}});if(r.error)return msg('regMsg',r.error.message);if(r.data.session){currentUser=r.data.user;enterDashboard()}else msg('regMsg','Cadastro criado. Verifique seu e-mail para confirmar a conta.',true)}
