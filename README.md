@@ -1,4 +1,4 @@
-# KEKEL BARBEARIA — APP MOBILE V1.5.1 CORRIGIDA
+# KEKEL BARBEARIA — APP MOBILE V1.6.0
 
 Projeto mobile separado da versão Web atual. Esta edição corrige e documenta a organização das pastas para envio pelo GitHub usando o celular.
 
@@ -38,3 +38,7 @@ Consulte `ANDROID_BUILD_GUIDE.md`. O pacote prepara o projeto para Capacitor, ma
 O app usa a chave pública/publishable configurada em `www/config.js`. Nunca coloque a chave `service_role` em um aplicativo cliente. A proteção efetiva dos dados depende das políticas RLS do Supabase.
 
 A versão Web atual permanece separada e não é modificada por este pacote.
+
+
+## V1.6.0
+Veja `VERSION_1_6.md` para os recursos adicionados e observações de compatibilidade.

@@ -1,9 +1,8 @@
-
 {
   "name": "kekel-barbearia-mobile",
-  "version": "1.5.3",
+  "version": "1.6.0",
   "private": true,
-  "description": "Kekel Barbearia Mobile V1.5.3 - correção de separação visual de perfis",
+  "description": "Kekel Barbearia Mobile V1.6.0 - gestão de horários, promoções e planos",
   "scripts": {
     "dev": "npx serve www",
     "build": "echo Mobile web assets ready for Capacitor",
@@ -24,6 +23,6 @@
   "devDependencies": {
     "@capacitor/cli": "latest",
     "serve": "latest",
-    "typescript": "latest"
+    "typescript": "^5.7.3"
   }
 }
