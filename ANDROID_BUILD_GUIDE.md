@@ -87,3 +87,11 @@ Não coloque o keystore, senha ou chave privada dentro do ZIP compartilhado ou n
 
 ## 9. Limitação desta V1.5 no ambiente de construção
 O pacote entregue contém a aplicação e toda a preparação/documentação para o Android. A criação/compilação do diretório nativo `android/` e do `.aab` depende do Android SDK/Android Studio e do ambiente de assinatura. Esses componentes não estão disponíveis neste ambiente de construção, então **nenhum AAB fictício é apresentado como se fosse real**.
+
+
+## V1.6 — APK de teste pelo GitHub Actions
+1. Envie também a pasta `.github/workflows` para a raiz do repositório.
+2. No GitHub, abra a aba **Actions** e selecione **Build Kekel Barbearia Android APK**.
+3. Toque em **Run workflow** e confirme.
+4. Quando terminar com sucesso, abra a execução e baixe o artefato `Kekel-Barbearia-Mobile-V1.6-APK`.
+5. O arquivo dentro do artefato é `app-debug.apk`. É uma versão de teste, não um AAB de publicação na Play Store.
