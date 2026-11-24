@@ -178,4 +178,20 @@ async function loadClientPlans(){dataArea.innerHTML='<div class="card"><div clas
 // Versão do aplicativo
 document.title="Kekel Barbearia Mobile V1.6";
 init();
+  
+async function logout(){
+  try{
+    if(!sb) return;
+    const {error}=await sb.auth.signOut();
+    if(error) throw error;
+    currentUser=null;
+    currentRole=null;
+    applyRoleUI('client');
+    show('login');
+    msg('loginMsg','Você saiu da sua conta.',true);
+  }catch(e){
+    msg('loginMsg','Erro ao sair: '+e.message);
+  }
+}
+
 </script></body></html>
