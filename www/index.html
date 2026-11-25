@@ -167,7 +167,85 @@ function toLocalDateTimeInput(value){if(!value)return '';const d=new Date(value)
 function promotionForm(x={}){const val=(k)=>x[k]??'';adminArea.innerHTML='<div class="card"><div class="title">'+(x.id?'✏️ Editar promoção':'＋ Nova promoção')+'</div><div class="field"><label>Título</label><input id="promoTitle" value="'+esc(val('title'))+'"></div><div class="field"><label>Descrição</label><input id="promoDescription" value="'+esc(val('description'))+'"></div><div class="field"><label>Tipo</label><select id="promoType"><option value="daily" '+(val('promotion_type')==='daily'?'selected':'')+'>Do dia</option><option value="weekly" '+(val('promotion_type')==='weekly'?'selected':'')+'>Da semana</option><option value="monthly" '+(val('promotion_type')==='monthly'?'selected':'')+'>Do mês</option></select></div><div class="grid"><div class="field"><label>Preço original (opcional)</label><input id="promoOriginal" type="number" min="0" step="0.01" value="'+esc(val('original_price'))+'"></div><div class="field"><label>Preço promocional</label><input id="promoPrice" type="number" min="0" step="0.01" value="'+esc(val('promotional_price'))+'"></div></div><div class="field"><label>Início (opcional)</label><input id="promoStart" type="datetime-local" value="'+toLocalDateTimeInput(val('starts_at'))+'"></div><div class="field"><label>Fim (opcional)</label><input id="promoEnd" type="datetime-local" value="'+toLocalDateTimeInput(val('ends_at'))+'"></div><div class="field"><label>Foto da promoção (JPG, PNG ou WebP até 5 MB)</label><input id="promoImage" type="file" accept="image/jpeg,image/png,image/webp"></div>'+(x.image_url?'<img class="promo-image" src="'+esc(x.image_url)+'" alt="Foto atual">':'')+'<div id="promoMsg"></div><button class="btn primary" onclick="adminSavePromotion('+(x.id?"'"+x.id+"'":'null')+','+JSON.stringify(x.image_url||'')+')">Salvar promoção</button><button class="btn secondary" onclick="adminPromotions()">Voltar</button></div>'}
 function adminNewPromotion(){promotionForm()}
 async function adminEditPromotion(id){const r=await sb.from('promotions').select('*').eq('id',id).single();if(r.error)return alert(r.error.message);promotionForm(r.data)}
-async function adminSavePromotion(id,oldImage){const title=promoTitle.value.trim(),description=promoDescription.value.trim(),type=promoType.value,original=promoOriginal.value===''?null:Number(promoOriginal.value),price=promoPrice.value===''?null:Number(promoPrice.value),start=promoStart.value?new Date(promoStart.value).toISOString():null,end=promoEnd.value?new Date(promoEnd.value).toISOString():null,file=promoImage.files?.[0];if(!title)return promoMsg.innerHTML=adminMsg('Informe o título.');if(start&&end&&new Date(end)<new Date(start))return promoMsg.innerHTML=adminMsg('A data final deve ser posterior à inicial.');if(file&&(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024))return promoMsg.innerHTML=adminMsg('Use JPG, PNG ou WebP com até 5 MB.');let image_url=oldImage||null;if(file){const ext=file.type==='image/png'?'png':file.type==='image/webp'?'webp':'jpg',path='promocoes/'+(id||('nova-'+Date.now()))+'-'+Date.now()+'.'+ext;const up=await sb.storage.from('promocoes').upload(path,file,{upsert:false,contentType:file.type});if(up.error)return promoMsg.innerHTML=adminMsg('Falha ao enviar imagem: '+up.error.message);image_url=sb.storage.from('promocoes').getPublicUrl(path).data.publicUrl}const payload={title,description:description||null,promotion_type:type,original_price:original,promotional_price:price,starts_at:start,ends_at:end,image_url,updated_at:new Date().toISOString()};const r=id?await sb.from('promotions').update(payload).eq('id',id):await sb.from('promotions').insert({...payload,active:true});if(r.error)return promoMsg.innerHTML=adminMsg(r.error.message);adminPromotions()}
+
+async function adminSavePromotion(id,oldImage){
+  const get = name => document.getElementById(name);
+  const output = get('promoMsg');
+
+  try {
+    const title = get('promoTitle').value.trim();
+    const description = get('promoDescription').value.trim();
+    const type = get('promoType').value;
+    const original = get('promoOriginal').value === ''
+      ? null : Number(get('promoOriginal').value);
+    const price = get('promoPrice').value === ''
+      ? null : Number(get('promoPrice').value);
+
+    const start = get('promoStart').value
+      ? new Date(get('promoStart').value).toISOString() : null;
+    const end = get('promoEnd').value
+      ? new Date(get('promoEnd').value).toISOString() : null;
+
+    const file = get('promoImage').files[0];
+
+    if (!title) {
+      output.innerHTML = adminMsg('Informe o título.');
+      return;
+    }
+
+    if (start && end && new Date(end) < new Date(start)) {
+      output.innerHTML = adminMsg('A data final deve ser posterior à inicial.');
+      return;
+    }
+
+    if (file && (!['image/jpeg','image/png','image/webp'].includes(file.type) || file.size > 5*1024*1024)) {
+      output.innerHTML = adminMsg('Use JPG, PNG ou WebP com até 5 MB.');
+      return;
+    }
+
+    let image_url = oldImage || null;
+
+    if (file) {
+      const ext = file.type === 'image/png' ? 'png' :
+        file.type === 'image/webp' ? 'webp' : 'jpg';
+
+      const path = 'promocoes/' + (id || 'nova-' + Date.now()) + '-' + Date.now() + '.' + ext;
+
+      const up = await sb.storage.from('promocoes').upload(
+        path, file, {upsert:false, contentType:file.type}
+      );
+
+      if (up.error) throw up.error;
+
+      image_url = sb.storage.from('promocoes').getPublicUrl(path).data.publicUrl;
+    }
+
+    const payload = {
+      title,
+      description: description || null,
+      promotion_type: type,
+      original_price: original,
+      promotional_price: price,
+      starts_at: start,
+      ends_at: end,
+      image_url,
+      updated_at: new Date().toISOString()
+    };
+
+    const result = id
+      ? await sb.from('promotions').update(payload).eq('id', id)
+      : await sb.from('promotions').insert({...payload, active:true});
+
+    if (result.error) throw result.error;
+
+    output.innerHTML = adminMsg('Promoção salva com sucesso!');
+    await adminPromotions();
+
+  } catch(e) {
+    output.innerHTML = adminMsg('Erro ao salvar promoção: ' + e.message);
+  }
+}
+
 async function adminTogglePromotion(id,active){const r=await sb.from('promotions').update({active,updated_at:new Date().toISOString()}).eq('id',id);if(r.error)alert(r.error.message);else adminPromotions()}
 async function adminDeletePromotion(id){if(!confirm('Excluir esta promoção?'))return;const r=await sb.from('promotions').delete().eq('id',id);if(r.error)alert(r.error.message);else adminPromotions()}
 async function loadHomePromotions(){const box=document.getElementById('homePromotions');if(!box)return;const r=await sb.from('promotions').select('id,title,description,image_url,promotion_type,original_price,promotional_price').eq('active',true).order('sort_order').limit(3);if(r.error){box.innerHTML='';return}box.innerHTML=(r.data||[]).map(x=>'<div class="card promo-card">'+(x.image_url?'<img class="promo-image" src="'+esc(x.image_url)+'" alt="'+esc(x.title)+'">':'')+'<div class="promo-label">'+(x.promotion_type==='daily'?'PROMOÇÃO DO DIA':x.promotion_type==='weekly'?'PROMOÇÃO DA SEMANA':'PROMOÇÃO DO MÊS')+'</div><h2 class="promo-title">'+esc(x.title)+'</h2><p class="promo-copy">'+esc(x.description||'')+'</p>'+(x.promotional_price!=null?'<div class="price">R$ '+Number(x.promotional_price).toFixed(2).replace('.',',')+'</div>':'')+'</div>').join('')}
