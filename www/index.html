@@ -164,8 +164,32 @@ async function adminTogglePlan(id,active){const r=await sb.from('membership_plan
 async function adminDeletePlan(id){if(!confirm('Excluir este plano?'))return;const r=await sb.from('membership_plans').delete().eq('id',id);if(r.error)alert(r.error.message);else adminPlans()}
 async function adminPromotions(){adminArea.innerHTML='<div class="card"><div class="title">🔥 Promoções</div><p class="small">Carregando...</p></div>';const r=await sb.from('promotions').select('*').order('sort_order').order('created_at',{ascending:false});if(r.error){adminArea.innerHTML='<div class="card">'+adminMsg(r.error.message)+'</div>';return}adminArea.innerHTML='<div class="card"><div class="title">🔥 Promoções</div><button class="btn primary" onclick="adminNewPromotion()">＋ Nova promoção</button>'+((r.data||[]).map(x=>'<div class="item">'+(x.image_url?'<img class="promo-image" src="'+esc(x.image_url)+'" alt="Imagem da promoção">':'')+'<strong>'+esc(x.title)+'</strong><div class="small">'+esc(x.promotion_type)+' • '+(x.active?'Ativa':'Inativa')+(x.promotional_price!=null?' • R$ '+Number(x.promotional_price).toFixed(2).replace('.',','):'')+'</div><button class="btn secondary" onclick="adminEditPromotion(\''+x.id+'\')">✏️ Editar</button><button class="btn secondary" onclick="adminTogglePromotion(\''+x.id+'\','+(!x.active)+')">'+(x.active?'Desativar':'Ativar')+'</button><button class="btn danger" onclick="adminDeletePromotion(\''+x.id+'\')">Excluir</button></div>').join('')||'<p class="small">Nenhuma promoção cadastrada.</p>')+'</div>'}
 function toLocalDateTimeInput(value){if(!value)return '';const d=new Date(value);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)}
-function promotionForm(x={}){const val=(k)=>x[k]??'';adminArea.innerHTML='<div class="card"><div class="title">'+(x.id?'✏️ Editar promoção':'＋ Nova promoção')+'</div><div class="field"><label>Título</label><input id="promoTitle" value="'+esc(val('title'))+'"></div><div class="field"><label>Descrição</label><input id="promoDescription" value="'+esc(val('description'))+'"></div><div class="field"><label>Tipo</label><select id="promoType"><option value="daily" '+(val('promotion_type')==='daily'?'selected':'')+'>Do dia</option><option value="weekly" '+(val('promotion_type')==='weekly'?'selected':'')+'>Da semana</option><option value="monthly" '+(val('promotion_type')==='monthly'?'selected':'')+'>Do mês</option></select></div><div class="grid"><div class="field"><label>Preço original (opcional)</label><input id="promoOriginal" type="number" min="0" step="0.01" value="'+esc(val('original_price'))+'"></div><div class="field"><label>Preço promocional</label><input id="promoPrice" type="number" min="0" step="0.01" value="'+esc(val('promotional_price'))+'"></div></div><div class="field"><label>Início (opcional)</label><input id="promoStart" type="datetime-local" value="'+toLocalDateTimeInput(val('starts_at'))+'"></div><div class="field"><label>Fim (opcional)</label><input id="promoEnd" type="datetime-local" value="'+toLocalDateTimeInput(val('ends_at'))+'"></div><div class="field"><label>Foto da promoção (JPG, PNG ou WebP até 5 MB)</label><input id="promoImage" type="file" accept="image/jpeg,image/png,image/webp"></div>'+(x.image_url?'<img class="promo-image" src="'+esc(x.image_url)+'" alt="Foto atual">':'')+'<div id="promoMsg"></div><button class="btn primary" onclick="adminSavePromotion('+(x.id?"'"+x.id+"'":'null')+','+JSON.stringify(x.image_url||'')+')">Salvar promoção</button>
-'<button class="btn primary" data-old-image="'+esc(x.image_url||'')+'" onclick="adminSavePromotion('+(x.id?"'"+x.id+"'":'null')+', this.dataset.oldImage)">Salvar promoção</button>'
+function promotionForm(x={}){
+  const val=(k)=>x[k]??'';
+  adminArea.innerHTML=
+  '<div class="card">'+
+  '<div class="title">'+(x.id?'✏️ Editar promoção':'＋ Nova promoção')+'</div>'+
+  '<div class="field"><label>Título</label><input id="promoTitle" value="'+esc(val('title'))+'"></div>'+
+  '<div class="field"><label>Descrição</label><input id="promoDescription" value="'+esc(val('description'))+'"></div>'+
+  '<div class="field"><label>Tipo</label><select id="promoType">'+
+  '<option value="daily" '+(val('promotion_type')==='daily'?'selected':'')+'>Do dia</option>'+
+  '<option value="weekly" '+(val('promotion_type')==='weekly'?'selected':'')+'>Da semana</option>'+
+  '<option value="monthly" '+(val('promotion_type')==='monthly'?'selected':'')+'>Do mês</option>'+
+  '</select></div>'+
+  '<div class="grid">'+
+  '<div class="field"><label>Preço original (opcional)</label><input id="promoOriginal" type="number" min="0" step="0.01" value="'+esc(val('original_price'))+'"></div>'+
+  '<div class="field"><label>Preço promocional</label><input id="promoPrice" type="number" min="0" step="0.01" value="'+esc(val('promotional_price'))+'"></div>'+
+  '</div>'+
+  '<div class="field"><label>Início (opcional)</label><input id="promoStart" type="datetime-local" value="'+toLocalDateTimeInput(val('starts_at'))+'"></div>'+
+  '<div class="field"><label>Fim (opcional)</label><input id="promoEnd" type="datetime-local" value="'+toLocalDateTimeInput(val('ends_at'))+'"></div>'+
+  '<div class="field"><label>Foto da promoção (JPG, PNG ou WebP até 5 MB)</label><input id="promoImage" type="file" accept="image/jpeg,image/png,image/webp"></div>'+
+  (x.image_url?'<img class="promo-image" src="'+esc(x.image_url)+'" alt="Foto atual">':'')+
+  '<div id="promoMsg"></div>'+
+  '<button class="btn primary" data-old-image="'+esc(x.image_url||'')+'" onclick="adminSavePromotion('+(x.id?"'"+x.id+"'":'null')+', this.dataset.oldImage)">Salvar promoção</button>'+
+  '<button class="btn secondary" onclick="adminPromotions()">Voltar</button>'+
+  '</div>';
+}
+
 
 function adminNewPromotion(){promotionForm()}
 async function adminEditPromotion(id){const r=await sb.from('promotions').select('*').eq('id',id).single();if(r.error)return alert(r.error.message);promotionForm(r.data)}
