@@ -142,7 +142,7 @@ let currentRole=null;
   
 function dashboardHome(){
   if(currentRole==='admin')return openAdmin();
-
+  document.getElementById('clientMenu')?.classList.add('hidden');
   dataArea.innerHTML=`
     <div class="card">
       <div class="title">Bem-vindo à Kekel Barbearia</div>
