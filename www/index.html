@@ -201,6 +201,14 @@ async function ensureProfile(){
   applyRoleUI(data.role);
   return data.role;
 }
+  function applyRoleUI(role){
+  currentRole=role;
+  const isAdmin=role==='admin';
+
+  document.getElementById('clientMenu')?.classList.toggle('hidden',isAdmin);
+  document.getElementById('clientNav')?.classList.toggle('hidden',isAdmin);
+  document.getElementById('adminMenu')?.classList.toggle('hidden',!isAdmin);
+}
 async function enterDashboard(){
   try{
     const role=await ensureProfile();
